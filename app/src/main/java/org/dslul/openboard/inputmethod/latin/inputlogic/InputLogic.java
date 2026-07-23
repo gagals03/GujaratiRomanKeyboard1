@@ -244,7 +244,8 @@ public final class InputLogic {
             resetComposingState(true /* alsoResetLastComposedWord */);
         }
         handler.postUpdateSuggestionStrip(SuggestedWords.INPUT_STYLE_TYPING);
-        final String text = performSpecificTldProcessingOnTextInput(rawText);
+        final String text = maybeRomanizeGujaratiText(
+                performSpecificTldProcessingOnTextInput(rawText));
         if (SpaceState.PHANTOM == mSpaceState) {
             insertAutomaticSpaceIfOptionsAndTextAllow(settingsValues);
         }
@@ -258,6 +259,26 @@ public final class InputLogic {
         inputTransaction.setDidAffectContents();
         inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
         return inputTransaction;
+    }
+
+    private static String maybeRomanizeGujaratiText(final String text) {
+        if (TextUtils.isEmpty(text) || !containsGujaratiUnicode(text)) {
+            return text;
+        }
+        return GujaratiRomanConverter.convert(text);
+    }
+
+    private static boolean containsGujaratiUnicode(final CharSequence text) {
+        for (int i = 0; i < text.length(); i++) {
+            final int codePoint = Character.codePointAt(text, i);
+            if (Character.UnicodeBlock.of(codePoint) == Character.UnicodeBlock.GUJARATI) {
+                return true;
+            }
+            if (Character.isSupplementaryCodePoint(codePoint)) {
+                i++;
+            }
+        }
+        return false;
     }
 
     /**
